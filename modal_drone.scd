@@ -75,7 +75,7 @@ sd = CtkSynthDef(\myNote, {arg freq, dur, amp, pan;
 	var sin, env, envGen;
 	env = Env([0.001, 0.99, 0.001], [0.75, 0.25], [\sin, \sin]);
 	envGen = EnvGen.kr(env, doneAction: 0, timeScale: dur);
-	sin = SinOsc.ar(freq, SinOsc.ar(20,0), amp);
+	sin = SinOsc.ar(freq, 0, amp);
 	Out.ar(0, Pan2.ar(sin * envGen, pan));
 }).send(s);
 
@@ -84,7 +84,7 @@ splaing = CtkSynthDef(\myNote, {arg freq, moda, modb, dur, amp, pan;
 	var pm, env, envGen;
 	env = Env([0.001, 0.99, 0.001], [0.75, 0.25], [\sin, \sin]);
 	envGen = EnvGen.kr(env, doneAction: 0, timeScale: dur);
-	pm = SinOsc.ar(freq, SinOsc.ar(XLine.kr(moda, modb, dur), 0, 2pi), amp);
+	pm = SinOsc.ar(freq, Blip.ar(XLine.kr(moda, modb, dur), 0, 2pi), amp);
 
 	Out.ar(0, Pan2.ar(pm * envGen, pan));
 }).send(s);
