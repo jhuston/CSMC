@@ -1,115 +1,59 @@
-/*
-==========================================================
-DX490a - Summer 2010
-		Instructor: Stelios Manousakis
-==========================================================
-Class 16.1:
-	Networking 2: Communication within a Local-Area-Network (LAN)
-		Contents:
-			• Connecting
-			• A simple example
-			• An example with sound
-			• Troubleshooting
-			• Additional networking quarks
-				- iPhone/iPodTouch/iPad
-==========================================================
-*/
-
-
-// ================= SUPERCOLLIDER IN LOCAL-AREA-NETWORKS =================
-
-
-// As  we have seen in the Networking-1 class (10.2), NetAddr is the core object for handling networking between different applications within a computer. This is also the case for connecting two computers via LAN. (Note however that NetAddr is no good for Internet connections! More on that on the next example file).
-
-// NOTE: This examples in this file need at least two computers!
+// LOCAL MACHINE NAME
+~localMachine = "river.local"
 
 
 
-
-// ====== CONNECTING ======
-
-// The connection process requires working on more than one machines simultaneously. I will be pointing out which machine you need to work with by writting local/remote.
-
-
-// • Step 1: LOCAL & REMOTE
-//	Make sure your Firewalls are off in both machines
-
-
-// • Step 2: LOCAL
-//	Create a Local-Area-Network (sometimes referred to as ad-hoc network) with one of the available machines
-
-
-// • Step 3: REMOTE
-//	Connect other computers to this particular LAN.
-
-
-// • Step 4: LOCAL & REMOTE
-// 	Create a new NetAddr; you can use the computer's IP address as an argument for the NetAddr object, OR, you can use the name of the specific computer to log into it from a remote machine, appending ".local". For example, my computer's name is "stm", so I can log in like this:
-
-	NetAddr("river.local", 57120)
-// Note that you need to use the current sclang port as the port argument  (by default set to 57120).
-	NetAddr.langPort; // retrieve the current port SC is listening to
-
-// So:
-// connect LOCAL to the remote machine:
-~robert = NetAddr("192.168.0.105", 57120);  // 57120 is sclang default port, use it to send to a remote sclang
-
-~jason = NetAddr("192.168.0.101", 57120);  // 57120 is sclang default port, use it to send to a remote sclang
-
-
-~jeff = NetAddr("192.168.0.101", 57120);  // 57120 is sclang default port, use it to send to a remote sclang
-
-// do the same from the remote machine, using the local machine's IP or name
+NetAddr(~localMachine, NetAddr.langPort)
+~robert = NetAddr("nsa-data-collection.local", 57120);
+~jason = NetAddr("192.168.0.101", 57120);
+~jeff = NetAddr("codedoval.local", 57120);
+~james = NetAddr("river.local", 57120);
 
 
 // • Step 5: LOCAL & REMOTE
 //	Create an OSCresponder. The one below is just for testing, so it only prints out what it received.
-r = OSCresponder(~remoteComp, 'stmIncoming', { arg time, resp, msg;
-	[time, msg[1]].postln;
-	}).add;
 
 
-// • Step 6: LOCAL & REMOTE
-// 	test by manually sending a message to the other computer. After creating an OSCresponder called 'dxlab8' on the remote machine you can send it this message.
-~remoteComp.sendMsg('dxlab8', "did my message arrive?", 0.5);
+~robert.sendMsg('robert', "test ", 0.5);
+~jeff.sendMsg('jeff', "test", 0.5);
+~jason.sendMsg('jason', "test", 0.5);
+~james.sendMsg('james', "test", 0.5);
 
-// Similarily, you can send a message to this machine like this:
-	~remoteComp.sendMsg('stmIncoming', "did my message arrive?", 0.5);
-
-
-// now, remove the responder to try something a bit more involved:
-r.remove
-
-
-
-
-// ====== A SIMPLE EXAMPLE: LOCAL ======
-
-// In this simple example, we will create a GUI interface with two knobs, one to send data to a remote machine, and one to receive.
-
-// 1. connecting:
-~remoteComp = NetAddr("169.254.144.182", 57120); // replace the IP ("Tesla.local") with the IP or name of the machine you want to connect to
+("Tesla.local") with the IP or name of the machine you want to connect to
 
 // 2. making a responder for receiving
-r = OSCresponder(~remoteComp, 'stmIncoming', { arg time, resp, msg;
+r = OSCresponder(~james, 'james', { arg time, resp, msg;
 	[time, msg[1]].postln;
-	{~recKnob.value_(msg[1])}.defer;
+	{~jamesKnob.value_(msg[1])}.defer;
 	}).add;
 
 
 // 3. Making a GUI window with a knob to send, and a knob to receive:
 (
 var window = Window.new("Networking test",Rect(318, 456, 400, 400)).front;
-~recKnob = Knob.new(window,Rect(175, 205, 217, 189))
-	.action_{|v| };
-~sendKnob = Knob.new(window,Rect(8, 11, 216, 188))
+
+~jeffKnob = Knob.new(window,Rect(10, 205, 100, 100))
 	.action_{|v|
-		~remoteComp.sendMsg('dxlab8', v.value); // << action: sending to remote machine
+		~jeff.sendMsg('jeff', v.value);
 		};
-StaticText.new(window,Rect(24, 333, 148, 50))
-	.string_("Receive some data -->>");
-StaticText.new(window,Rect(229, 15, 130, 47))
-	.string_("<<-- Send some data");
+~robertKnob = Knob.new(window,Rect(100, 205, 100, 100))
+	.action_{|v|
+		~robert.sendMsg('robert', v.value);
+		};
+~jasonKnob = Knob.new(window,Rect(200, 205, 100, 100))
+	.action_{|v|
+		~jason.sendMsg('jason', v.value);
+		};
+~jamesKnob = Knob.new(window,Rect(8, 11, 100, 100))
+	.action_{|v|};
+
+StaticText.new(window,Rect(10, 150, 148, 50))
+	.string_("jeff");
+StaticText.new(window,Rect(100, 150, 130, 47))
+	.string_("robert");
+StaticText.new(window,Rect(200, 150, 148, 50))
+	.string_("jason");
+
 )
 
 /* Now, do the same in the remote machine, replacing in:
@@ -151,6 +95,8 @@ s.boot;
 
 // 1. connecting:
 ~remoteComp = NetAddr("169.254.144.182", 57120); // replace the IP ("Tesla.local") with the IP or name of the machine you want to connect to
+
+
 
 // 2. making a responder for receiving
 r = OSCresponder(~remoteComp, 'stmIncoming', { arg time, resp, msg;
